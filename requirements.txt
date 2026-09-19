@@ -1,2 +1,2 @@
 requirments are:
-streamlit and python 
+streamlit
