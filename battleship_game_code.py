@@ -18,9 +18,7 @@
           requirements: ["streamlit"],
           entrypoint: "app.py",
           files: {
-            "app.py":
-import random
-
+            "app.py": `import random
 import streamlit as st
 from streamlit import session_state, rerun
 
@@ -57,27 +55,30 @@ st.html('''
                 } 
         </style>  
         ''')
+
 if "game_init" not in session_state:
     session_state.game_init = False
-def fired_shots (r,c):
-    if (r,c) in session_state.ships_coordinates:
-        session_state.board[(r,c)] = "Hit"
+
+def fired_shots(r, c):
+    if (r, c) in session_state.ships_coordinates:
+        session_state.board[(r, c)] = "Hit"
     else:
-        session_state.board[(r,c)] = "Miss"
+        session_state.board[(r, c)] = "Miss"
+
 if not session_state.game_init:
-    ship_input = st.number_input('how many ships do you want',min_value=1,max_value=5,value=3)
-    ammo_input = st.number_input('how much ammo do you need ',value=10)
-    session_state.ships=ship_input
+    ship_input = st.number_input('how many ships do you want', min_value=1, max_value=5, value=3)
+    ammo_input = st.number_input('how much ammo do you need ', value=10)
+    session_state.ships = ship_input
     session_state.ammo_input = ammo_input
-    session_state.ships_coordinates= set()
-    session_state.board={}
+    session_state.ships_coordinates = set()
+    session_state.board = {}
     session_state.ammo_present = True
 
-    if st.button("contineu"):
-        session_state.game_init=True
-        while len(session_state.ships_coordinates) <session_state.ships:
-            r = random.randint(0,4)
-            c = random.randint(0,5)
+    if st.button("continue"):
+        session_state.game_init = True
+        while len(session_state.ships_coordinates) < session_state.ships:
+            r = random.randint(0, 4)
+            c = random.randint(0, 5)
             session_state.ships_coordinates.add((r, c))
         st.rerun()
 else:
@@ -94,51 +95,56 @@ else:
             cols = st.columns(6, gap="medium")
             for c in range(6):
                 with cols[c]:
-                    coord = (r,c)
+                    coord = (r, c)
                     key = f"btn_{r}_{c}"
-                    status=session_state.board.get(coord)
+                    status = session_state.board.get(coord)
                     if status == "Hit":
                         st.html('''
                                 <div class='hit-animation'>
                                 <button disabled> 🔥hit </button>
                                 </div>
                             ''')
-                                
-                       # st.button("🔥hit" , key=f"hit_btn_{r}_{c}",disabled=True,use_container_width=True)
-                       # st.html("</div>")
-                    elif status == "Miss" :
+                    elif status == "Miss":
                         st.button("miss", key=f"miss_btn_{r}_{c}", disabled=True, use_container_width=True)
-
                     else:
-                        if session_state.ammo_present :
+                        if session_state.ammo_present:
                             st.button("🎯",
                                     key=key,
                                     on_click=fired_shots,
-                                    args = (r,c),
-                                    use_container_width = True
+                                    args=(r, c),
+                                    use_container_width=True
                                 )
-                        if not session_state.ammo_present :
+                        if not session_state.ammo_present:
                             st.button("AMMO EMPTY",
                                       key=key,
                                       on_click=fired_shots,
                                       args=(r, c),
                                       use_container_width=True,
-                                      disabled= True
+                                      disabled=True
                                       )
     with right:
-
         if session_state.game_init:
-            st.metric(f"ammo left:" , value= f"{ammo}/{session_state.ammo_input} ")
-        if ammo <= 4 :
+            st.metric(f"ammo left:", value=f"{ammo}/{session_state.ammo_input} ")
+        if ammo <= 4:
             st.error("ammo is very low")
-        if ammo <= 0 :
+        if ammo <= 0:
             ammo = 0
             st.error("you have no ammo")
-        if hit_count == session_state.ships :
+        if hit_count == session_state.ships:
             st.balloons()
             st.success("you have won the game ")
             ammo = 0 
 
+        if st.button("restart game"):
+            session_state.game_init = False
+            st.rerun()`
+          },
+        },
+        document.getElementById("root")
+      );
+    </script>
+  </body>
+</html>
         if st.button("restart game"):
             session_state.game_init = False
             st.rerun()
