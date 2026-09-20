@@ -1,58 +1,37 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <title>Battleship Game</title>
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@stlite/mountable@0.63.1/build/stlite.css"
-    />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script src="https://cdn.jsdelivr.net/npm/@stlite/mountable@0.63.1/build/stlite.js"></script>
-    <script>
-      stlite.mount(
-        {
-          requirements: ["streamlit"],
-          entrypoint: "app.py",
-          files: {
-            "app.py": `import random
+import random
 import streamlit as st
-from streamlit import session_state, rerun
+from streamlit import session_state
 
 st.title("battleship")
 st.html('''
         <style>
         div[data-testid="stButton"] >button {
-        height: 70px;
-        width: 100%;
-        font-size: 12px;
-         background-color:#231FFF ;
-         border:1px solid #1FB9FF;
-         border-radius:6px;
-         
-         transition: all 0.25s ease-in-out;
-         margin-bottom:8px;
-         }
-         div[data-testid="stButton"] >button:hover {
-         background-color:#FF571F;
-         border:2px solid #FFFFFF;
-         border-radius:10px;
-         box-shadow: 0px 0px 10px rgba(0, 173, 181, 0.5);
-         }
-         @keyframes hit-fire-pulse{
+            height: 70px;
+            width: 100%;
+            font-size: 12px;
+            background-color:#231FFF ;
+            border:1px solid #1FB9FF;
+            border-radius:6px;
+            transition: all 0.25s ease-in-out;
+            margin-bottom:8px;
+        }
+        div[data-testid="stButton"] >button:hover {
+            background-color:#FF571F;
+            border:2px solid #FFFFFF;
+            border-radius:10px;
+            box-shadow: 0px 0px 10px rgba(0, 173, 181, 0.5);
+        }
+        @keyframes hit-fire-pulse{
             0% {transform: scale(1);box-shadow: 0 0 5px #FF3333; filter: brightness(1.0);}
             50% {transform : scale(1.1);box-shadow: 0 0 25px #FF0000; filter: brightness(1.3);}
             100%{transform: scale(1);box-shadow: 0 0 5px #FF3333; filter: brightness(1.0);}
-                }
-         .hit-animation   {
-                background-color: rgba(255, 31, 31, 0.4)!important;
-                border : 2px solid #E0D7D7!important;
-                color : #FFFFFF !important;
-                animation : hit-fire-pulse 1s infinite ease-in-out!important;
-                } 
+        }
+        .hit-animation {
+            background-color: rgba(255, 31, 31, 0.4)!important;
+            border : 2px solid #E0D7D7!important;
+            color : #FFFFFF !important;
+            animation : hit-fire-pulse 1s infinite ease-in-out!important;
+        } 
         </style>  
         ''')
 
@@ -108,20 +87,9 @@ else:
                         st.button("miss", key=f"miss_btn_{r}_{c}", disabled=True, use_container_width=True)
                     else:
                         if session_state.ammo_present:
-                            st.button("🎯",
-                                    key=key,
-                                    on_click=fired_shots,
-                                    args=(r, c),
-                                    use_container_width=True
-                                )
-                        if not session_state.ammo_present:
-                            st.button("AMMO EMPTY",
-                                      key=key,
-                                      on_click=fired_shots,
-                                      args=(r, c),
-                                      use_container_width=True,
-                                      disabled=True
-                                      )
+                            st.button("🎯", key=key, on_click=fired_shots, args=(r, c), use_container_width=True)
+                        else:
+                            st.button("AMMO EMPTY", key=key, on_click=fired_shots, args=(r, c), use_container_width=True, disabled=True)
     with right:
         if session_state.game_init:
             st.metric(f"ammo left:", value=f"{ammo}/{session_state.ammo_input} ")
@@ -137,15 +105,4 @@ else:
 
         if st.button("restart game"):
             session_state.game_init = False
-            st.rerun()`
-          },
-        },
-        document.getElementById("root")
-      );
-    </script>
-  </body>
-</html>
-        if st.button("restart game"):
-            session_state.game_init = False
             st.rerun()
-
