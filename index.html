@@ -1,127 +1,171 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <title>Battleship Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Streamlit Battleship Game</title>
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@stlite/mountable@0.63.1/build/stlite.css"
     />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #0e1117;
+        color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+      #loading {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        text-align: center;
+      }
+      .spinner {
+        border: 4px solid rgba(255, 255, 255, 0.1);
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        border-left-color: #ff4b4b;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      .fallback-box {
+        max-width: 600px;
+        margin: 40px auto;
+        padding: 20px;
+        border: 1px solid #333;
+        border-radius: 8px;
+        background-color: #161b22;
+      }
+      a.fallback-btn {
+        display: inline-block;
+        margin-top: 15px;
+        padding: 10px 16px;
+        background-color: #ff4b4b;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="loading">
+        <div class="spinner"></div>
+        <h2>🚢 Loading Battleship Game...</h2>
+        <p style="color: #888;">Booting Python WebAssembly engine in your browser...</p>
+      </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@stlite/mountable@0.63.1/build/stlite.js"></script>
     <script>
+      // Global error handler if stlite fails to boot or CDN is blocked
+      window.addEventListener("error", function (e) {
+        document.getElementById("root").innerHTML = `
+          <div class="fallback-box">
+            <h2 style="color: #ff4b4b;">⚠️ Couldn't Load Pyodide Engine</h2>
+            <p>Your browser or network blocked loading WebAssembly dependencies via CDN.</p>
+            <p>You can view the full Python source code for this game directly on GitHub:</p>
+            <a class="fallback-btn" href="https://github.com/" target="_blank">View GitHub Repository</a>
+          </div>
+        `;
+      });
+
       stlite.mount(
         {
           requirements: ["streamlit"],
           entrypoint: "app.py",
           files: {
-            "app.py": `import random
-import streamlit as st
-from streamlit import session_state
+            "app.py": `import streamlit as st
+import random
 
-st.title("battleship")
-st.html("""
-        <style>
-        div[data-testid="stButton"] >button {
-            height: 70px;
-            width: 100%;
-            font-size: 12px;
-            background-color:#231FFF ;
-            border:1px solid #1FB9FF;
-            border-radius:6px;
-            transition: all 0.25s ease-in-out;
-            margin-bottom:8px;
-        }
-        div[data-testid="stButton"] >button:hover {
-            background-color:#FF571F;
-            border:2px solid #FFFFFF;
-            border-radius:10px;
-            box-shadow: 0px 0px 10px rgba(0, 173, 181, 0.5);
-        }
-        @keyframes hit-fire-pulse{
-            0% {transform: scale(1);box-shadow: 0 0 5px #FF3333; filter: brightness(1.0);}
-            50% {transform : scale(1.1);box-shadow: 0 0 25px #FF0000; filter: brightness(1.3);}
-            100%{transform: scale(1);box-shadow: 0 0 5px #FF3333; filter: brightness(1.0);}
-        }
-        .hit-animation {
-            background-color: rgba(255, 31, 31, 0.4)!important;
-            border : 2px solid #E0D7D7!important;
-            color : #FFFFFF !important;
-            animation : hit-fire-pulse 1s infinite ease-in-out!important;
-        } 
-        </style>  
-        """)
+st.set_page_config(page_title="Battleship", page_icon="🚢", layout="centered")
 
-if "game_init" not in session_state:
-    session_state.game_init = False
+# Custom CSS for high-contrast board and animations
+st.markdown("""
+<style>
+    .stButton>button {
+        width: 100%;
+        height: 50px;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 8px;
+        transition: all 0.2s ease-in-out;
+    }
+    .stButton>button:hover {
+        transform: scale(1.05);
+    }
+</style>
+""", unsafe_allow_html=True)
 
-def fired_shots(r, c):
-    if (r, c) in session_state.ships_coordinates:
-        session_state.board[(r, c)] = "Hit"
-    else:
-        session_state.board[(r, c)] = "Miss"
+GRID_SIZE = 5
+NUM_SHIPS = 3
 
-if not session_state.game_init:
-    ship_input = st.number_input('how many ships do you want', min_value=1, max_value=5, value=3)
-    ammo_input = st.number_input('how much ammo do you need ', value=10)
-    session_state.ships = ship_input
-    session_state.ammo_input = ammo_input
-    session_state.ships_coordinates = set()
-    session_state.board = {}
-    session_state.ammo_present = True
+def init_game():
+    st.session_state.board = [["🌊" for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
+    st.session_state.ships = set()
+    st.session_state.attempts = 0
+    st.session_state.hits = 0
+    st.session_state.game_over = False
 
-    if st.button("continue"):
-        session_state.game_init = True
-        while len(session_state.ships_coordinates) < session_state.ships:
-            r = random.randint(0, 4)
-            c = random.randint(0, 5)
-            session_state.ships_coordinates.add((r, c))
-        st.rerun()
-else:
-    hit_count = list(session_state.board.values()).count("Hit")
-    total_used_ammo = len(session_state.board)
-    ammo = session_state.ammo_input - total_used_ammo
-    if ammo <= 0:
-        session_state.ammo_present = False
-        ammo = 0
-    st.write(f"**Ships Destroyed:** {hit_count} / {session_state.ships}")
-    left, middle, right = st.columns([0.01, 3, 1.2])
-    with middle:
-        for r in range(5):
-            cols = st.columns(6, gap="medium")
-            for c in range(6):
-                with cols[c]:
-                    coord = (r, c)
-                    key = f"btn_{r}_{c}"
-                    status = session_state.board.get(coord)
-                    if status == "Hit":
-                        st.html("<div class='hit-animation'><button disabled> 🔥hit </button></div>")
-                    elif status == "Miss":
-                        st.button("miss", key=f"miss_btn_{r}_{c}", disabled=True, use_container_width=True)
-                    else:
-                        if session_state.ammo_present:
-                            st.button("🎯", key=key, on_click=fired_shots, args=(r, c), use_container_width=True)
-                        else:
-                            st.button("AMMO EMPTY", key=key, on_click=fired_shots, args=(r, c), use_container_width=True, disabled=True)
-    with right:
-        if session_state.game_init:
-            st.metric("ammo left:", value=f"{ammo}/{session_state.ammo_input}")
-        if ammo <= 4:
-            st.error("ammo is very low")
-        if ammo <= 0:
-            ammo = 0
-            st.error("you have no ammo")
-        if hit_count == session_state.ships:
-            st.balloons()
-            st.success("you have won the game ")
-            ammo = 0 
+    # Randomly place ships
+    while len(st.session_state.ships) < NUM_SHIPS:
+        r = random.randint(0, GRID_SIZE - 1)
+        c = random.randint(0, GRID_SIZE - 1)
+        st.session_state.ships.add((r, c))
 
-        if st.button("restart game"):
-            session_state.game_init = False
-            st.rerun()`
+if "board" not in st.session_state:
+    init_game()
+
+st.title("🚢 Battleship Command")
+st.write(f"Find and sink all **{NUM_SHIPS} enemy ships** hidden in the grid!")
+
+# Score Metrics
+col1, col2, col3 = st.columns(3)
+col1.metric("Target Ships Left", NUM_SHIPS - st.session_state.hits)
+col2.metric("Shots Fired", st.session_state.attempts)
+col3.metric("Status", "Victory!" if st.session_state.hits == NUM_SHIPS else "In Battle")
+
+st.markdown("---")
+
+# Render Interactive Grid
+for r in range(GRID_SIZE):
+    cols = st.columns(GRID_SIZE)
+    for c in range(GRID_SIZE):
+        cell_val = st.session_state.board[r][c]
+        btn_key = f"btn_{r}_{c}"
+        
+        if cols[c].button(cell_val, key=btn_key, disabled=st.session_state.game_over or cell_val != "🌊"):
+            st.session_state.attempts += 1
+            if (r, c) in st.session_state.ships:
+                st.session_state.board[r][c] = "💥"
+                st.session_state.hits += 1
+                st.toast("🎯 DIRECT HIT!", icon="💥")
+            else:
+                st.session_state.board[r][c] = "❌"
+                st.toast("Splash... Missed!", icon="🌊")
+            
+            if st.session_state.hits == NUM_SHIPS:
+                st.session_state.game_over = True
+            st.rerun()
+
+if st.session_state.game_over:
+    st.balloons()
+    st.success(f"🎉 Victory! You sunk all {NUM_SHIPS} ships in {st.session_state.attempts} shots!")
+
+st.markdown("---")
+if st.button("🔄 Restart Game", use_container_width=True):
+    init_game()
+    st.rerun()`
           }
         },
         document.getElementById("root")
