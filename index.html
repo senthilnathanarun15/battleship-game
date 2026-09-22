@@ -69,7 +69,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@stlite/mountable@0.63.1/build/stlite.js"></script>
     <script>
-      // Fallback error catcher if WebAssembly fails or CDN is blocked
       window.addEventListener("error", function (e) {
         document.getElementById("root").innerHTML = `
           <div class="fallback-box">
@@ -91,7 +90,7 @@ import streamlit as st
 from streamlit import session_state, rerun
 
 st.title("battleship")
-st.html(\`\`\`
+st.html('''
         <style>
         div[data-testid="stButton"] >button {
         height: 70px;
@@ -122,7 +121,7 @@ st.html(\`\`\`
                 animation : hit-fire-pulse 1s infinite ease-in-out!important;
                 } 
         </style>  
-        \`\`\`)
+        ''')
 
 if "game_init" not in session_state:
     session_state.game_init = False
@@ -167,11 +166,11 @@ else:
                     key = f"btn_{r}_{c}"
                     status=session_state.board.get(coord)
                     if status == "Hit":
-                        st.html(\`\`\`
+                        st.html('''
                                 <div class='hit-animation'>
                                 <button disabled> 🔥hit </button>
                                 </div>
-                            \`\`\`)
+                            ''')
                     elif status == "Miss" :
                         st.button("miss", key=f"miss_btn_{r}_{c}", disabled=True, use_container_width=True)
 
